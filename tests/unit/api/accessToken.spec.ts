@@ -1,10 +1,5 @@
 import Cookies from "js-cookie";
-import {
-  setToken,
-  getToken,
-  dropToken,
-  isAuthenticated,
-} from "@/api/accessToken";
+import { setToken, getToken, dropToken, isAuthenticated } from "@/api/accessToken";
 
 jest.mock("js-cookie");
 const mokedCookies = Cookies as jest.Mocked<typeof Cookies>;
@@ -28,6 +23,7 @@ describe("accessToken", () => {
     const token = "access_token";
     // @ts-ignore
     mokedCookies.get.mockImplementation((key: string): string | undefined => {
+      // @ts-ignore
       return {
         [TOKEN_COOKIE_KEY]: token,
       }[key];
@@ -41,6 +37,7 @@ describe("accessToken", () => {
   it("getToken returns undefined when token empty", () => {
     // @ts-ignore
     mokedCookies.get.mockImplementation((key: string): string | undefined => {
+      // @ts-ignore
       return {
         [TOKEN_COOKIE_KEY]: "",
       }[key];
