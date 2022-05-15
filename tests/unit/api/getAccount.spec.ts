@@ -1,10 +1,6 @@
 import { fetchAccount } from "@/api/getAccount";
 import { rest } from "@/api/rest";
-import {
-  ApiAuthenticationError,
-  ApiForbiddenError,
-  ApiUnknownError,
-} from "@/types/Errors";
+import { ApiAuthenticationError, ApiForbiddenError, ApiUnknownError, ApiValidateError } from "@/types/Errors";
 import { User } from "@/types/User";
 
 jest.mock("@/api/rest");
@@ -48,7 +44,7 @@ describe("fetchAccount", () => {
     const response = await fetchAccount();
 
     expect(response.isLeft()).toBe(true);
-    expect(response.value).toBeInstanceOf(ApiUnknownError);
+    expect(response.value).toBeInstanceOf(ApiValidateError);
   });
 
   it("returns ApiError if API request rejected", async () => {

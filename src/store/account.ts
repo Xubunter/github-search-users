@@ -1,5 +1,11 @@
 import { isAuthenticated } from "@/api/accessToken";
-import { ApiAuthenticationError, ApiForbiddenError, assertIsExhausted, ApiUnknownError } from "@/types/Errors";
+import {
+  ApiAuthenticationError,
+  ApiForbiddenError,
+  assertIsExhausted,
+  ApiUnknownError,
+  ApiValidateError,
+} from "@/types/Errors";
 import { fetchAccount } from "@/api/getAccount";
 import { OAuthLogout, OAuthLogin, OAuthLoginTokenError } from "@/api/OAuthLogin";
 import { User } from "@/types/User";
@@ -52,7 +58,7 @@ export const useAccountStore = defineStore("accountStore", {
             title: "Доступно только авторизованным пользователям",
             text: "Для получения доступа войдите в свой аккаунт",
           });
-        } else if (error instanceof ApiUnknownError) {
+        } else if (error instanceof ApiUnknownError || error instanceof ApiValidateError) {
           notification.error({
             title: "Ой, что-то сломалось",
             text: error.details.message,

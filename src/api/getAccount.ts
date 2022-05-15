@@ -1,22 +1,13 @@
 import { rest } from "./rest";
 import { User } from "@/types/User";
-import {
-  ApiAuthenticationError,
-  ApiForbiddenError,
-  ApiUnknownError,
-} from "@/types/Errors";
+import { ApiAuthenticationError, ApiForbiddenError, ApiUnknownError, ApiValidateError } from "@/types/Errors";
 import { Static } from "runtypes";
 import { left, right, Either } from "@sweet-monads/either";
 
 type AccountResponseSeccess = Static<typeof User>;
-type AccountResponseErrors =
-  | ApiUnknownError
-  | ApiAuthenticationError
-  | ApiForbiddenError;
+type AccountResponseErrors = ApiUnknownError | ApiAuthenticationError | ApiValidateError | ApiForbiddenError;
 
-export function fetchAccount(): Promise<
-  Either<AccountResponseErrors, AccountResponseSeccess>
-> {
+export function fetchAccount(): Promise<Either<AccountResponseErrors, AccountResponseSeccess>> {
   return rest
     .get("user")
     .then((res) => {
@@ -24,7 +15,7 @@ export function fetchAccount(): Promise<
         return right(res.data);
       }
 
-      return left(new ApiUnknownError({ message: "Ошибка валидации" }));
+      return left(new ApiValidateError({ message: "Ошибка валидации" }));
     })
     .catch((e) => {
       if (e.code === "401") return left(new ApiAuthenticationError());

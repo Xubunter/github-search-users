@@ -19,9 +19,12 @@ export function assertIsExhausted(error: never): never {
 
 export class ApiUnknownError {
   private __brand = ApiUnknownError;
-  constructor(
-    public details: { message?: string } = { message: "Неизвестная ошибка" }
-  ) {}
+  constructor(public details: { message?: string } = { message: "Неизвестная ошибка" }) {}
+}
+
+export class ApiValidateError {
+  private __brand = ApiUnknownError;
+  constructor(public details: { message?: string } = { message: "Ошибка валидации" }) {}
 }
 
 export class ApiForbiddenError {
