@@ -11,3 +11,7 @@ declare global {
     }
   }
 }
+
+declare module "vuesax" {
+  export interface A {}
+}

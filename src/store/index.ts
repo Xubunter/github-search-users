@@ -1,11 +1,8 @@
 import Vue from "vue";
-import Vuex from "vuex";
+import { createPinia, PiniaVuePlugin } from "pinia";
+import VueCompositionAPI from "@vue/composition-api";
 
-Vue.use(Vuex);
+Vue.use(PiniaVuePlugin);
+Vue.use(VueCompositionAPI);
 
-export default new Vuex.Store({
-  state: {},
-  mutations: {},
-  actions: {},
-  modules: {},
-});
+export const pinia = createPinia();
