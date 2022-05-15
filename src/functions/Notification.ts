@@ -30,7 +30,7 @@ interface Notification {
   error: (p: NotificationParams) => void;
 }
 
-const notification: Notification = Vue.prototype.$vs.notification;
+const notification: Notification = (...x) => Vue.prototype.$vs.notification(...x);
 notification.error = (params: NotificationParams) =>
   notification({
     color: "danger",
