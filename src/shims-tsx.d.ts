@@ -12,6 +12,8 @@ declare global {
   }
 }
 
-declare module "vuesax" {
-  export interface A {}
+declare module "vue/types/vue" {
+  interface Vue {
+    $vs: any;
+  }
 }
