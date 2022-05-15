@@ -31,6 +31,11 @@ export class ApiForbiddenError {
   private __brand = ApiForbiddenError;
 }
 
+export class ApiLimitError {
+  private __brand = ApiLimitError;
+  constructor(public wait: number = 15000) {}
+}
+
 export class ApiAuthenticationError {
   private __brand = ApiAuthenticationError;
 }
