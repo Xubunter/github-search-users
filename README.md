@@ -1,5 +1,11 @@
 # innostage-test
 
+## Demo
+
+Чтобы заработала авторизация **нужно отключить проверку корсов в браузере**. Для хрома: запустить с флагами `--user-data-dir="любая папка для сохранения сессии" --disable-web-security`.
+
+https://xubunter.github.io/github-search-users/
+
 ## Setup
 
 Создать в корне `.env` и добавить `clinet_id` и `client_secret` из  [Github OAuth application](https://github.com/settings/applications/new). Образец `.env.example`.
