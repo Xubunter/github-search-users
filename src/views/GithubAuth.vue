@@ -10,12 +10,12 @@ export default Vue.extend({
   name: "LoginPage",
   components: {},
   data() {
-    return {
-      code: this.$route.query.code,
-    };
+    return {};
   },
   async created() {
-    const access_code = this.$route.query.code;
+    const searchParams = new URLSearchParams(location.search);
+    const access_code = searchParams.get("code");
+
     if (typeof access_code === "string") {
       const account = useAccountStore();
       await account.login(access_code);

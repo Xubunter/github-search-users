@@ -6,6 +6,14 @@ Vue.use(VueRouter);
 
 const routes: Array<RouteConfig> = [
   {
+    path: "/",
+    name: "auth",
+    meta: {
+      requiresUnauth: true,
+    },
+    component: () => import(/* webpackChunkName: "auth" */ "../views/GithubAuth.vue"),
+  },
+  {
     path: "/login",
     name: "login",
     meta: {
@@ -16,14 +24,7 @@ const routes: Array<RouteConfig> = [
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "login" */ "../views/Login.vue"),
   },
-  {
-    path: "/auth",
-    name: "auth",
-    meta: {
-      requiresUnauth: true,
-    },
-    component: () => import(/* webpackChunkName: "auth" */ "../views/GithubAuth.vue"),
-  },
+
   {
     name: "main-layout",
     path: "/",
