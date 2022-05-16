@@ -37,7 +37,7 @@
           ></user-search-item>
         </router-link>
       </div>
-      <div class="page-users__loading" ref="loading" v-show="loading"></div>
+      <Spinner :show="loading"></Spinner>
     </infinity-scroll>
   </div>
 </template>
@@ -48,6 +48,7 @@ import Vue from "vue";
 import { searchUsers } from "@/api/searchUsers";
 import UserSearchItem from "@/components/UserSearchItem.vue";
 import InfinityScroll from "@/components/InfinityScroll.vue";
+import Spinner from "@/components/Spinner.vue";
 import type { SearchUser } from "@/types/User";
 import {
   ApiLimitError,
@@ -76,6 +77,7 @@ export default Vue.extend({
   components: {
     UserSearchItem,
     InfinityScroll,
+    Spinner,
   },
   data(): {
     users: SearchUser[];
@@ -222,17 +224,9 @@ export default Vue.extend({
         request();
       });
     },
-    initLoadingElement() {
-      const el = this.$refs.loading as Element;
-      this.$vs.loading({
-        target: el,
-        type: "scale",
-      });
-    },
   },
   mounted() {
     this.getFirstPage();
-    this.initLoadingElement();
   },
 });
 </script>
@@ -252,11 +246,6 @@ export default Vue.extend({
   &__user-link {
     text-decoration: none;
     color: #2c3e50;
-  }
-
-  &__loading {
-    position: relative;
-    height: 200px;
   }
 }
 

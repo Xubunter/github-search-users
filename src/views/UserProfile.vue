@@ -38,7 +38,7 @@
           :description="repo.description"
           :html_url="repo.html_url"
         ></repository-item>
-        <Spinner v-show="loadingRepositories"></Spinner>
+        <Spinner :show="loadingRepositories"></Spinner>
       </div>
     </infinity-scroll>
   </div>
