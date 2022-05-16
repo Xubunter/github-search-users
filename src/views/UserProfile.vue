@@ -109,16 +109,6 @@ export default Vue.extend({
     this.getFirstRepositoriesPage();
   },
   methods: {
-    // Github иногда возвращает повторяющиеся репы. Избавляемся от них
-    filterNonUniqueRepositories(repo: Repository[]) {
-      let ids = this.repositories.map((r) => r.id);
-
-      return repo.reduce((acc: Repository[], r) => {
-        if (ids.includes(r.id)) return acc;
-        acc.push(r);
-        return acc;
-      }, []);
-    },
     async getUser() {
       this.loadingUser = true;
       const userEther = await getUser(this.username);
@@ -150,10 +140,7 @@ export default Vue.extend({
 
         this.repositories = isFirstPage
           ? [...repositories]
-          : [
-              ...this.repositories,
-              ...this.filterNonUniqueRepositories(repositories),
-            ];
+          : [...this.repositories, ...repositories];
         return;
       }
 
