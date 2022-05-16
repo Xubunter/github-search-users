@@ -13,7 +13,7 @@
       </vs-input>
       <div class="page-users__search"></div>
     </div>
-    <infinity-scroll @next="nextPage" :page="users.length">
+    <infinity-scroll @next="getNextPage" :page="users.length">
       <div class="page-users__list">
         <h3
           class="page-users__list-empry-message"
@@ -163,7 +163,7 @@ export default Vue.extend({
         assertIsExhausted(error);
       }
     },
-    async nextPage() {
+    async getNextPage() {
       // Еще не получили первую страницу
       if (this.params.page === getInitialParams().page) return;
       // Единовременно может быть только один запрос
@@ -195,7 +195,7 @@ export default Vue.extend({
 
       if (error instanceof ApiLimitError) {
         this.loading = true;
-        this.retryRequest(error.wait, params, this.nextPage, (attempt) => {
+        this.retryRequest(error.wait, params, this.getNextPage, (attempt) => {
           if (attempt === null) {
             notification.error({
               title: "Не удалось получить ответ от сервера, попробуйте позже",
