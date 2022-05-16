@@ -142,8 +142,10 @@ export default Vue.extend({
       this.loadingRepositories = false;
 
       if (repositoriesEther.isRight()) {
-        this.repositoriesParams.page = nextPage;
         const repositories = repositoriesEther.value;
+        if (repositories.length === 0) return;
+
+        this.repositoriesParams.page = nextPage;
 
         this.repositories = isFirstPage
           ? [...repositories]
