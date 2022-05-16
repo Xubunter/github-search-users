@@ -18,7 +18,7 @@
         <h2 class="page-user-profile__repositories-title">Repositories:</h2>
         <vs-select
           v-model="repositoriesParams.sort"
-          @input="getRepositoriesPage()"
+          @input="getFirstRepositoriesPage"
         >
           <vs-option
             v-for="(label, key) in sortVariants"
@@ -67,7 +67,7 @@ type getRepositoriesParams = {
 
 function getInitialParams(): getRepositoriesParams {
   return {
-    page: 0,
+    page: 1,
     sort: "full_name",
   };
 }
@@ -106,7 +106,7 @@ export default Vue.extend({
   },
   mounted() {
     this.getUser();
-    this.getRepositoriesPage();
+    this.getFirstRepositoriesPage();
   },
   methods: {
     // Github иногда возвращает повторяющиеся репы. Избавляемся от них
@@ -138,6 +138,7 @@ export default Vue.extend({
 
       const repositoriesEther = await getUserRepositories(this.username, {
         ...params,
+        page: nextPage,
       });
       this.loadingRepositories = false;
 
@@ -170,7 +171,13 @@ export default Vue.extend({
         assertIsExhausted(error);
       }
     },
+    async getFirstRepositoriesPage() {
+      return this.getRepositoriesPage();
+    },
     async getNextRepositoriesPage() {
+      // Единовременно может быть только один запрос
+      if (this.loadingRepositories) return;
+
       return this.getRepositoriesPage(this.repositoriesParams.page + 1);
     },
   },

@@ -66,7 +66,7 @@ type SearchParams = {
 
 function getInitialParams(): SearchParams {
   return {
-    page: 0,
+    page: 1,
     name: "",
   };
 }
@@ -119,11 +119,12 @@ export default Vue.extend({
       }, []);
     },
 
-    async getFirstPage() {
+    async getUsers(nextPage = 1) {
       const params = { ...this.params };
-      const nextPage = getInitialParams().page + 1;
-      this.users = [];
+      const isFirstPage = nextPage === 1;
+
       this.loading = true;
+      if (isFirstPage) this.users = [];
 
       const searchResultEither = await searchUsers({
         ...params,
@@ -138,7 +139,10 @@ export default Vue.extend({
         this.params.page = nextPage;
         this.totalUsers = searchResultEither.value.total_count;
         const users = searchResultEither.value.items;
-        this.users = [...users];
+
+        this.users = isFirstPage
+          ? [...users]
+          : [...this.users, ...this.filterNonUniqueUsers(users)];
         return;
       }
 
@@ -171,61 +175,17 @@ export default Vue.extend({
         assertIsExhausted(error);
       }
     },
+
+    async getFirstPage() {
+      return this.getUsers();
+    },
     async getNextPage() {
-      // Еще не получили первую страницу
-      if (this.params.page === getInitialParams().page) return;
       // Единовременно может быть только один запрос
       if (this.loading) return;
       // Страниц больше нет
       if (!this.hasNextPage) return;
 
-      const params = { ...this.params };
-      const nextPage = params.page + 1;
-      this.loading = true;
-
-      const searchResultEither = await searchUsers({
-        ...params,
-        page: nextPage,
-      });
-      this.loading = false;
-
-      const isExpectedRequest = isEqual(params, this.params);
-      if (!isExpectedRequest) return;
-
-      if (searchResultEither.isRight()) {
-        this.params.page = nextPage;
-        const users = searchResultEither.value.items;
-        this.users = [...this.users, ...this.filterNonUniqueUsers(users)];
-        return;
-      }
-
-      const error = searchResultEither.value;
-
-      if (error instanceof ApiLimitError) {
-        this.loading = true;
-        this.retryRequest(error.wait, params, this.getNextPage, (attempt) => {
-          if (attempt === null) {
-            notification.error({
-              title: "Не удалось получить ответ от сервера, попробуйте позже",
-            });
-          } else {
-            notification.error({
-              title: "Превышен лимит запросов",
-              text: `${attempt}-я попытка повторить запрос`,
-            });
-          }
-        });
-      } else if (error instanceof ApiValidateError) {
-        notification.error({
-          title: "Что-то пошло не так",
-        });
-      } else if (error instanceof ApiUnknownError) {
-        notification.error({
-          title: "Что-то пошло совсем не так",
-        });
-      } else {
-        assertIsExhausted(error);
-      }
+      return this.getUsers(this.params.page + 1);
     },
     retryRequest(
       ms: number,
