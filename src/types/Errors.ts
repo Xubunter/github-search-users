@@ -39,3 +39,7 @@ export class ApiLimitError {
 export class ApiAuthenticationError {
   private __brand = ApiAuthenticationError;
 }
+
+export class ApiNotFoundError {
+  private __brand = ApiNotFoundError;
+}

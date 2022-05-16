@@ -21,13 +21,21 @@
         >
           Ничего не найдено
         </h3>
-        <user-search-item
-          class="page-users__user"
+        <router-link
+          class="page-users__user-link"
+          :to="{
+            name: 'user-profile',
+            params: { username: user.login },
+          }"
           v-for="user in users"
           :key="user.id"
-          :avatar="user.avatar_url"
-          :login="user.login"
-        ></user-search-item>
+        >
+          <user-search-item
+            class="page-users__user"
+            :avatar="user.avatar_url"
+            :login="user.login"
+          ></user-search-item>
+        </router-link>
       </div>
       <div class="page-users__loading" ref="loading" v-show="loading"></div>
     </infinity-scroll>
@@ -280,6 +288,10 @@ export default Vue.extend({
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     grid-gap: 16px;
+  }
+  &__user-link {
+    text-decoration: none;
+    color: #2c3e50;
   }
 
   &__loading {
