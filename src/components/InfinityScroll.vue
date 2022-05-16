@@ -2,7 +2,11 @@
   <div class="infinity-scroll" ref="container">
     <slot></slot>
     <div class="infinity-scroll__target" ref="container">
-      <Observer @intersect="onIntersect"></Observer>
+      <Observer
+        :key="page"
+        @intersect="onIntersect"
+        style="height: 100%"
+      ></Observer>
     </div>
   </div>
 </template>
@@ -14,8 +18,11 @@ import Observer from "./Observer.vue";
 export default Vue.extend({
   name: "InfinityScroll",
   components: { Observer },
-  data() {
-    return {};
+  props: {
+    page: {
+      type: Number,
+      default: -1,
+    },
   },
   methods: {
     onIntersect() {
@@ -34,6 +41,7 @@ export default Vue.extend({
     position: absolute;
     bottom: 0;
     height: 100vh;
+    // max-height: 1000px;
     left: 0;
     right: 0;
     z-index: -100;

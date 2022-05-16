@@ -2,7 +2,7 @@
   <div class="page-users">
     <div class="page-users__header">
       <vs-input
-        v-model="filter.next.searchName"
+        v-model="params.name"
         @input="onSearch"
         placeholder="User name"
         class="page-users__search"
@@ -13,17 +13,21 @@
       </vs-input>
       <div class="page-users__search"></div>
     </div>
-    <infinity-scroll @next="nextPage">
+    <infinity-scroll @next="nextPage" :page="users.length">
       <div class="page-users__list">
+        <h3
+          class="page-users__list-empry-message"
+          v-if="!loading && users.length === 0"
+        >
+          Ничего не найдено
+        </h3>
         <user-search-item
           class="page-users__user"
           v-for="user in users"
           :key="user.id"
           :avatar="user.avatar_url"
           :login="user.login"
-        >
-          {{ user.login }}
-        </user-search-item>
+        ></user-search-item>
       </div>
       <div class="page-users__loading" ref="loading" v-show="loading"></div>
     </infinity-scroll>
@@ -44,24 +48,18 @@ import {
   assertIsExhausted,
 } from "@/types/Errors";
 import { notification } from "@/functions/Notification";
+import { isEqual } from "@/functions/equal";
+import { debounce } from "@/functions/debounce";
 
-type FilterParams = {
+type SearchParams = {
   page: number;
-  searchName: string;
+  name: string;
 };
 
-const debounce = (fn: (...args: any) => any, ms = 0) => {
-  let timeoutId: any;
-  return function (this: any, ...args: any) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn.apply(this, args), ms);
-  };
-};
-
-function getInitialFilter(): FilterParams {
+function getInitialParams(): SearchParams {
   return {
-    page: 1,
-    searchName: "",
+    page: 0,
+    name: "",
   };
 }
 
@@ -74,97 +72,141 @@ export default Vue.extend({
   data(): {
     users: SearchUser[];
     loading: boolean;
-    filter: {
-      current: FilterParams;
-      next: FilterParams;
-    };
+    params: SearchParams;
+    totalUsers: number;
     retry: {
       attempt: number;
-      params: FilterParams;
+      params: SearchParams;
     };
   } {
     return {
       users: [],
       loading: false,
-      filter: {
-        current: getInitialFilter(),
-        next: getInitialFilter(),
-      },
+      totalUsers: 0,
+      params: getInitialParams(),
       retry: {
         attempt: 0,
-        params: getInitialFilter(),
+        params: getInitialParams(),
       },
     };
   },
   computed: {
-    filterChanged(): boolean {
-      const fCurrent = this.filter.current;
-      const fNext = this.filter.next;
-
-      return (
-        fCurrent.searchName === fNext.searchName && fCurrent.page === fNext.page
-      );
+    hasNextPage(): boolean {
+      return Boolean(this.totalUsers > this.users.length);
     },
   },
   methods: {
     onSearch: debounce(function (this: any) {
-      this.getListUsers();
+      this.getFirstPage();
     }, 300),
-    // debounced: debounce(function () {
-    //   this.onSearch();
-    // }),
-    // debounce: debounce,
-    async getListUsers() {
-      this.filter.next.page = getInitialFilter().page;
+
+    // Github иногда возвращает повторяющихся юзеров. Избавляемся от них
+    filterNonUniqueUsers(users: SearchUser[]) {
+      let ids = this.users.map((u) => u.id);
+
+      return users.reduce((acc: SearchUser[], u) => {
+        if (ids.includes(u.id)) return acc;
+        acc.push(u);
+        return acc;
+      }, []);
+    },
+
+    async getFirstPage() {
+      const params = { ...this.params };
+      const nextPage = getInitialParams().page + 1;
+      this.users = [];
       this.loading = true;
+
       const searchResultEither = await searchUsers({
-        page: this.filter.next.page,
-        name: this.filter.next.searchName,
+        ...params,
+        page: nextPage,
       });
       this.loading = false;
 
+      const isExpectedRequest = isEqual(params, this.params);
+      if (!isExpectedRequest) return;
+
       if (searchResultEither.isRight()) {
+        this.params.page = nextPage;
+        this.totalUsers = searchResultEither.value.total_count;
         const users = searchResultEither.value.items;
         this.users = [...users];
-        this.applyCurrentFilter();
-        return;
-      }
-    },
-    applyCurrentFilter() {
-      this.filter.current = { ...this.filter.next };
-    },
-    async nextPage() {
-      console.log("nextPage", this.filter.next.page);
-      if (this.loading) return;
-
-      this.filter.next.page++;
-      this.loading = true;
-      const searchResultEither = await searchUsers({
-        page: this.filter.next.page,
-        name: this.filter.next.searchName,
-      });
-      // const searchResultEither = left(new ApiLimitError(3000));
-      // this.loading = false;
-      if (searchResultEither.isRight()) {
-        this.loading = false;
-        const users = searchResultEither.value.items;
-        this.users = [...this.users, ...users];
-        this.applyCurrentFilter();
         return;
       }
 
       const error = searchResultEither.value;
-      console.log(error);
+
       if (error instanceof ApiLimitError) {
-        this.filter.next.page--;
-        this.retryRequest(
-          error.wait,
-          {
-            searchName: this.filter.next.searchName,
-            page: this.filter.next.page,
-          },
-          this.nextPage
-        );
+        this.loading = true;
+        this.retryRequest(error.wait, params, this.getFirstPage, (attempt) => {
+          if (attempt === null) {
+            notification.error({
+              title: "Не удалось получить ответ от сервера, попробуйте позже",
+            });
+            return;
+          } else {
+            notification.error({
+              title: "Превышен лимит запросов",
+              text: `${attempt}-я попытка повторить запрос`,
+            });
+          }
+        });
+      } else if (error instanceof ApiValidateError) {
+        notification.error({
+          title: "Что-то пошло не так",
+        });
+      } else if (error instanceof ApiUnknownError) {
+        notification.error({
+          title: "Что-то пошло совсем не так",
+        });
+      } else {
+        assertIsExhausted(error);
+      }
+    },
+    async nextPage() {
+      // Еще не получили первую страницу
+      if (this.params.page === getInitialParams().page) return;
+      // Единовременно может быть только один запрос
+      if (this.loading) return;
+      // Страниц больше нет
+      if (!this.hasNextPage) return;
+
+      const params = { ...this.params };
+      const nextPage = params.page + 1;
+      this.loading = true;
+
+      const searchResultEither = await searchUsers({
+        ...params,
+        page: nextPage,
+      });
+      this.loading = false;
+
+      const isExpectedRequest = isEqual(params, this.params);
+      if (!isExpectedRequest) return;
+
+      if (searchResultEither.isRight()) {
+        this.params.page = nextPage;
+        const users = searchResultEither.value.items;
+        this.users = [...this.users, ...this.filterNonUniqueUsers(users)];
+        return;
+      }
+
+      const error = searchResultEither.value;
+
+      if (error instanceof ApiLimitError) {
+        this.loading = true;
+        this.retryRequest(error.wait, params, this.nextPage, (attempt) => {
+          if (attempt === null) {
+            notification.error({
+              title: "Не удалось получить ответ от сервера, попробуйте позже",
+            });
+          } else {
+            notification.error({
+              title: "Превышен лимит запросов",
+              text: `${attempt}-я попытка повторить запрос`,
+            });
+          }
+        });
       } else if (error instanceof ApiValidateError) {
         notification.error({
           title: "Что-то пошло не так",
@@ -179,41 +221,50 @@ export default Vue.extend({
     },
     retryRequest(
       ms: number,
-      params: { searchName: string; page: number },
-      callback: (...args: any) => any
+      params: SearchParams,
+      request: (...args: any) => any,
+      onFail?: (attempt: number | null) => void
     ) {
-      if (
-        params.searchName == this.retry.params.searchName &&
-        params.page === this.retry.params.page
-      ) {
-        this.retry.attempt++;
-      } else {
-        this.retry.params.searchName = params.searchName;
-        this.retry.params.page = params.page;
-        this.retry.attempt = 0;
-      }
+      const RETRY_LIMIT = 5;
 
-      if (this.retry.attempt > 5) {
-        ms = ms * 2;
-      }
-      if (this.retry.attempt > 6) {
+      params = { ...params };
+
+      if (this.retry.attempt >= RETRY_LIMIT) {
         this.retry.attempt = 0;
+        onFail && onFail(null);
         this.loading = false;
         return Promise.resolve();
       }
+
+      const isNewRetryRequest = !isEqual(params, this.retry.params);
+      if (isNewRetryRequest) {
+        this.retry.params = { ...params };
+        this.retry.attempt = 0;
+      }
+
+      this.retry.attempt++;
+
+      onFail && onFail(this.retry.attempt);
+
       return new Promise((resolve) => setTimeout(resolve, ms)).then(() => {
+        const isExpectedRequest = isEqual(params, this.params);
+        if (!isExpectedRequest) return;
+
         this.loading = false;
-        return callback();
+        request();
+      });
+    },
+    initLoadingElement() {
+      const el = this.$refs.loading as Element;
+      this.$vs.loading({
+        target: el,
+        type: "scale",
       });
     },
   },
   mounted() {
-    this.getListUsers();
-    const el = this.$refs.loading as Element;
-    this.$vs.loading({
-      target: el,
-      type: "scale",
-    });
+    this.getFirstPage();
+    this.initLoadingElement();
   },
 });
 </script>
@@ -221,7 +272,6 @@ export default Vue.extend({
 <style lang="scss" scoped>
 .page-users {
   padding: 16px 32px;
-  // height: calc(100vh - 66px);
   &__header {
     margin-bottom: 32px;
     padding: 0 12px;
