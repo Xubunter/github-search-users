@@ -5,7 +5,7 @@ import { Array, Boolean, Number, Record, Static } from "runtypes";
 import { left, right, Either } from "@sweet-monads/either";
 
 type ListUsersParams = {
-  page?: number; // user_id
+  page?: number;
   per_page?: number;
   name?: string;
 };

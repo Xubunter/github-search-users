@@ -34,14 +34,11 @@ export default Vue.extend({
 
 <style lang="scss" scoped>
 .infinity-scroll {
-  // height: 100%;
-  // overflow-y: scroll;
   position: relative;
   &__target {
     position: absolute;
     bottom: 0;
     height: 100vh;
-    // max-height: 1000px;
     left: 0;
     right: 0;
     z-index: -100;

@@ -76,7 +76,6 @@ export const useAccountStore = defineStore("accountStore", {
           return;
         }
 
-        // router.push({ name: "login" });
         const error = loginResponseEither.value;
         if (error instanceof OAuthLoginTokenError) {
           notification.error({
@@ -96,7 +95,6 @@ export const useAccountStore = defineStore("accountStore", {
         notification.error({
           title: "Ой, что-то сломалось",
         });
-        // router.push({ name: "login" });
       }
     },
     logout() {
