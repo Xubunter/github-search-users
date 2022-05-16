@@ -11,7 +11,7 @@
     </div>
     <Spinner v-show="loadingUser"></Spinner>
     <infinity-scroll
-      :page="repositories.length + repositoriesParams.page"
+      :page="repositories.length"
       @next="getNextRepositoriesPage"
     >
       <div class="page-user-profile__repositories-header">
