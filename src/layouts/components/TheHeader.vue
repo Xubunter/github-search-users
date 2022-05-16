@@ -1,5 +1,10 @@
 <template>
   <header class="header">
+    <div class="header__home">
+      <router-link :to="{ name: 'users' }">
+        <vs-button icon shadow><box-icon name="home-alt"></box-icon></vs-button>
+      </router-link>
+    </div>
     <div class="header__profile">
       <vs-avatar class="header__profile-avatar">
         <img v-if="user.avatar_url" :src="user.avatar_url" alt="" />
@@ -43,7 +48,10 @@ export default Vue.extend({
   padding: 8px 32px;
 
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+
+  &__home {
+  }
 
   &__profile {
     display: flex;
