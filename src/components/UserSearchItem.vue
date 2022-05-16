@@ -1,15 +1,4 @@
 <template>
-  <!-- <vs-card type="4" class="user-search-item">
-    <template #title>
-      <h3 class="user-search-item__avatar">{{ login }}</h3>
-    </template>
-    <template #img>
-      <img :src="avatar" alt="" />
-    </template>
-    <template #text>
-      <p>Lorem</p>
-    </template>
-  </vs-card> -->
   <div class="user-search-item">
     <vs-avatar class="user-search-item__avatar">
       <img :src="avatar" alt="" />
