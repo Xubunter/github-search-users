@@ -14,8 +14,7 @@ const routes: Array<RouteConfig> = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () =>
-      import(/* webpackChunkName: "login" */ "../views/Login.vue"),
+    component: () => import(/* webpackChunkName: "login" */ "../views/Login.vue"),
   },
   {
     path: "/auth",
@@ -26,8 +25,7 @@ const routes: Array<RouteConfig> = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () =>
-      import(/* webpackChunkName: "auth" */ "../views/GithubAuth.vue"),
+    component: () => import(/* webpackChunkName: "auth" */ "../views/GithubAuth.vue"),
   },
   {
     name: "main-layout",
@@ -41,8 +39,7 @@ const routes: Array<RouteConfig> = [
         // route level code-splitting
         // this generates a separate chunk (about.[hash].js) for this route
         // which is lazy-loaded when the route is visited.
-        component: () =>
-          import(/* webpackChunkName: "auth" */ "../views/Users.vue"),
+        component: () => import(/* webpackChunkName: "users" */ "../views/Users.vue"),
       },
     ],
   },
@@ -55,9 +52,7 @@ const router = new VueRouter({
 });
 
 router.beforeEach((to, from, next) => {
-  const requiresUnauth = to.matched.some(
-    (record) => record.meta.requiresUnauth
-  );
+  const requiresUnauth = to.matched.some((record) => record.meta.requiresUnauth);
   const requiresAuth = !requiresUnauth;
 
   if (requiresAuth && !isAuthenticated()) next({ name: "login" });
