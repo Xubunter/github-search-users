@@ -137,45 +137,52 @@ export default Vue.extend({
       const isExpectedRequest = isEqual(params, this.params);
       if (!isExpectedRequest) return;
 
-      if (searchResultEither.isRight()) {
-        this.params.page = nextPage;
-        this.totalUsers = searchResultEither.value.total_count;
-        const users = searchResultEither.value.items;
+      searchResultEither
+        .map((data) => {
+          const users = data.items;
+          this.totalUsers = data.total_count;
 
-        this.users = isFirstPage
-          ? [...users]
-          : [...this.users, ...this.filterNonUniqueUsers(users)];
-        return;
-      }
+          if (users.length === 0) return;
 
-      const error = searchResultEither.value;
-
-      if (error instanceof ApiLimitError) {
-        this.loading = true;
-        this.retryRequest(error.wait, params, this.getFirstPage, (attempt) => {
-          if (attempt === null) {
+          this.params.page = nextPage;
+          this.users = isFirstPage
+            ? [...users]
+            : [...this.users, ...this.filterNonUniqueUsers(users)];
+        })
+        .mapLeft((error) => {
+          if (error instanceof ApiLimitError) {
+            this.loading = true;
+            this.retryRequest(
+              error.wait,
+              params,
+              () => this.getUsers(nextPage),
+              (attempt) => {
+                if (attempt === null) {
+                  notification.error({
+                    title:
+                      "Не удалось получить ответ от сервера, попробуйте позже",
+                  });
+                  return;
+                } else {
+                  notification.error({
+                    title: "Превышен лимит запросов",
+                    text: `${attempt}-я попытка повторить запрос`,
+                  });
+                }
+              }
+            );
+          } else if (error instanceof ApiValidateError) {
             notification.error({
-              title: "Не удалось получить ответ от сервера, попробуйте позже",
+              title: "Что-то пошло не так",
             });
-            return;
+          } else if (error instanceof ApiUnknownError) {
+            notification.error({
+              title: "Что-то пошло совсем не так",
+            });
           } else {
-            notification.error({
-              title: "Превышен лимит запросов",
-              text: `${attempt}-я попытка повторить запрос`,
-            });
+            assertIsExhausted(error);
           }
         });
-      } else if (error instanceof ApiValidateError) {
-        notification.error({
-          title: "Что-то пошло не так",
-        });
-      } else if (error instanceof ApiUnknownError) {
-        notification.error({
-          title: "Что-то пошло совсем не так",
-        });
-      } else {
-        assertIsExhausted(error);
-      }
     },
 
     async getFirstPage() {

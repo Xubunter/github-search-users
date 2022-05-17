@@ -11,6 +11,7 @@
     </div>
     <Spinner v-show="loadingUser"></Spinner>
     <infinity-scroll
+      v-if="user"
       :page="repositories.length"
       @next="getNextRepositoriesPage"
     >
@@ -54,11 +55,13 @@ import { getUser } from "@/api/getUser";
 import { getUserRepositories } from "@/api/getUserRepositories";
 import { Repository } from "@/types/Repository";
 import {
+  ApiNotFoundError,
   ApiUnknownError,
   ApiValidateError,
   assertIsExhausted,
 } from "@/types/Errors";
 import { notification } from "@/functions/Notification";
+import { isEqual } from "@/functions/equal";
 
 type getRepositoriesParams = {
   page: number;
@@ -114,10 +117,27 @@ export default Vue.extend({
       const userEther = await getUser(this.username);
       this.loadingUser = false;
 
-      if (userEther.isRight()) {
-        const user = userEther.value;
-        this.user = { ...user };
-      }
+      userEther
+        .map((user) => {
+          this.user = { ...user };
+        })
+        .mapLeft((error) => {
+          if (error instanceof ApiNotFoundError) {
+            notification.error({
+              title: "Пользователя не существует",
+            });
+          } else if (error instanceof ApiValidateError) {
+            notification.error({
+              title: "Что-то пошло не так",
+            });
+          } else if (error instanceof ApiUnknownError) {
+            notification.error({
+              title: "Что-то пошло совсем не так",
+            });
+          } else {
+            assertIsExhausted(error);
+          }
+        });
     },
     async getRepositoriesPage(nextPage = 1) {
       const params = { ...this.repositoriesParams };
@@ -132,31 +152,32 @@ export default Vue.extend({
       });
       this.loadingRepositories = false;
 
-      if (repositoriesEther.isRight()) {
-        const repositories = repositoriesEther.value;
-        if (repositories.length === 0) return;
+      const isExpectedRequest = isEqual(params, this.repositoriesParams);
+      if (!isExpectedRequest) return;
 
-        this.repositoriesParams.page = nextPage;
+      repositoriesEther
+        .map((repositories) => {
+          if (repositories.length === 0) return;
 
-        this.repositories = isFirstPage
-          ? [...repositories]
-          : [...this.repositories, ...repositories];
-        return;
-      }
+          this.repositoriesParams.page = nextPage;
 
-      const error = repositoriesEther.value;
-
-      if (error instanceof ApiValidateError) {
-        notification.error({
-          title: "Что-то пошло не так",
+          this.repositories = isFirstPage
+            ? [...repositories]
+            : [...this.repositories, ...repositories];
+        })
+        .mapLeft((error) => {
+          if (error instanceof ApiValidateError) {
+            notification.error({
+              title: "Что-то пошло не так",
+            });
+          } else if (error instanceof ApiUnknownError) {
+            notification.error({
+              title: "Что-то пошло совсем не так",
+            });
+          } else {
+            assertIsExhausted(error);
+          }
         });
-      } else if (error instanceof ApiUnknownError) {
-        notification.error({
-          title: "Что-то пошло совсем не так",
-        });
-      } else {
-        assertIsExhausted(error);
-      }
     },
     async getFirstRepositoriesPage() {
       return this.getRepositoriesPage();
