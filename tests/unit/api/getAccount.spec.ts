@@ -48,8 +48,8 @@ describe("fetchAccount", () => {
   });
 
   it("returns ApiError if API request rejected", async () => {
-    mockedRest.get.mockRejectedValueOnce({ code: "401" });
-    mockedRest.get.mockRejectedValueOnce({ code: "403" });
+    mockedRest.get.mockRejectedValueOnce({ response: { status: 401 } });
+    mockedRest.get.mockRejectedValueOnce({ response: { status: 403 } });
     mockedRest.get.mockRejectedValueOnce({});
 
     const responseWithError401 = await fetchAccount();
