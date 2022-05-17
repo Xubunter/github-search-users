@@ -43,7 +43,7 @@ export function searchUsers(
     })
     .catch((e) => {
       // You have exceeded a secondary rate limit. Please wait a few minutes before you try again.
-      if (e.code === "ERR_BAD_REQUEST") return left(new ApiLimitError());
+      if (e?.response?.status === 403) return left(new ApiLimitError());
       console.error(e);
       return left(new ApiUnknownError());
     });

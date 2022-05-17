@@ -22,7 +22,7 @@ export function getUser(username: string): Promise<Either<UserResponseErrors, Us
       return left(new ApiValidateError({ message: "Ошибка валидации" }));
     })
     .catch((e) => {
-      if (e.code === "404") return left(new ApiNotFoundError());
+      if (e?.response?.status === 404) return left(new ApiNotFoundError());
 
       console.error(e);
       return left(new ApiUnknownError());

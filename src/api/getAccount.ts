@@ -18,8 +18,8 @@ export function fetchAccount(): Promise<Either<AccountResponseErrors, AccountRes
       return left(new ApiValidateError({ message: "Ошибка валидации" }));
     })
     .catch((e) => {
-      if (e.code === "401") return left(new ApiAuthenticationError());
-      if (e.code === "403") return left(new ApiForbiddenError());
+      if (e?.response?.status === 401) return left(new ApiAuthenticationError());
+      if (e?.response?.status === 403) return left(new ApiForbiddenError());
 
       console.error(e);
       return left(new ApiUnknownError());
